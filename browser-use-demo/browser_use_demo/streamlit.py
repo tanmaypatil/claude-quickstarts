@@ -17,6 +17,11 @@ import streamlit as st
 from anthropic.types.beta import BetaContentBlockParam
 
 from anthropic import RateLimitError
+from browser_use_demo.attachments import (
+    SUPPORTED_EXTENSIONS,
+    AttachmentError,
+    build_user_content,
+)
 from browser_use_demo.loop import APIProvider, sampling_loop
 from browser_use_demo.message_renderer import MessageRenderer, Sender
 from browser_use_demo.tools import ToolResult
@@ -81,6 +86,7 @@ def setup_state():
         "chat_disabled": False,  # Simple flag to disable chat input
         "active_messages": [],  # Store messages for current interaction
         "active_response_container": None,  # Container reference for streaming responses
+        "uploader_key": 0,  # Bumped after each send so the file uploader clears
         # Complex initialization - browser tool (inline lambda)
         "browser_tool": lambda: BrowserTool(),
     }
@@ -439,8 +445,8 @@ def get_or_create_event_loop():
     return st.session_state.event_loop
 
 
-async def run_agent(user_input: str):
-    """Run the browser automation agent with user input."""
+async def run_agent(user_input: str, files: list[tuple[str, bytes]] | None = None):
+    """Run the browser automation agent with user input and optional attached files."""
     try:
         # Ensure chat is disabled while processing
         st.session_state.chat_disabled = True
@@ -448,12 +454,13 @@ async def run_agent(user_input: str):
         # Create message renderer
         renderer = MessageRenderer(st.session_state)
 
-        # Add user message to history
-        st.session_state.messages.append({"role": "user", "content": user_input})
+        # Add user message (with any attached files) to history
+        content = build_user_content(user_input, files or [])
+        st.session_state.messages.append({"role": "user", "content": content})
 
         # Display user message in active container
         with st.session_state.active_response_container:
-            renderer.render(Sender.USER, user_input)
+            renderer.render_user_content(content)
 
         # Clear active messages for new interaction
         st.session_state.active_messages = []
@@ -583,6 +590,15 @@ def main():
             value=st.session_state.system_prompt,
             key="system_prompt",
             help="Add custom instructions for the browser agent",
+        )
+
+        # File for the agent to read, sent with the next chat message
+        uploaded_files = st.file_uploader(
+            "Attach files for Claude",
+            type=[ext.lstrip(".") for ext in SUPPORTED_EXTENSIONS],
+            accept_multiple_files=True,
+            key=f"uploader_{st.session_state.uploader_key}",
+            help="Sent with your next message. Text, CSV, JSON, PDF or images, up to 10 MB each.",
         )
 
         # Hide screenshots
@@ -732,8 +748,18 @@ def main():
         # Clear any previous error when starting a new request
         st.session_state.last_error = None
         # Process the prompt
+        files = [(f.name, f.getvalue()) for f in uploaded_files or []]
+        try:
+            build_user_content(prompt, files)  # validate before starting the agent
+        except AttachmentError as e:
+            st.session_state.chat_disabled = False
+            st.session_state.last_error = {"message": str(e), "traceback": None}
+            st.rerun()
+        # Files go with this message only, so clear the uploader for the next one
+        if files:
+            st.session_state.uploader_key += 1
         loop = get_or_create_event_loop()
-        loop.run_until_complete(run_agent(prompt))
+        loop.run_until_complete(run_agent(prompt, files))
 
 
 if __name__ == "__main__":
