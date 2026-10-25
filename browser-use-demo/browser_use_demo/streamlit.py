@@ -27,7 +27,7 @@ from browser_use_demo.message_renderer import MessageRenderer, Sender
 from browser_use_demo.tools import ToolResult
 
 PROVIDER_TO_DEFAULT_MODEL_NAME: dict[APIProvider, str] = {
-    APIProvider.ANTHROPIC: "claude-sonnet-4-5-20250929",
+    APIProvider.ANTHROPIC: "claude-sonnet-5-5",
     APIProvider.BEDROCK: "anthropic.claude-sonnet-4-5-20250929-v1:0",
     APIProvider.VERTEX: "claude-sonnet-4-5@20250929",
 }
@@ -54,8 +54,11 @@ STREAMLIT_STYLE = """
 </style>
 """
 
-# Claude 4.5 models for browser automation
+# Models offered for browser automation, default first
 BROWSER_COMPATIBLE_MODELS = [
+    "claude-sonnet-5-5",
+    "claude-opus-5-5",
+    "claude-haiku-5-5",
     "claude-sonnet-4-5-20250929",
     "claude-opus-4-5-20251101",
     "claude-haiku-4-5-20251001",
