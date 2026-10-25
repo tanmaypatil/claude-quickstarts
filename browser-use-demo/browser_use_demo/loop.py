@@ -131,6 +131,11 @@ async def sampling_loop(
                 "system": [system],
                 "tools": tool_collection.to_params(),
             }
+            if enable_prompt_caching:
+                # Automatic caching moves a breakpoint to the end of the
+                # conversation on every call, so each turn reads the history
+                # (screenshots and page trees included) back from cache
+                api_kwargs["cache_control"] = BetaCacheControlEphemeralParam(type="ephemeral")
             # Only include betas if there are any (e.g., prompt caching)
             if betas:
                 api_kwargs["betas"] = betas
