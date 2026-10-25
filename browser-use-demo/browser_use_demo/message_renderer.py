@@ -237,6 +237,10 @@ class MessageRenderer:
         if handler:
             handler(message)
 
+    def render_user_content(self, content):
+        """Render a user message that may include attached files."""
+        self._render_user_content(content)
+
     def _render_user_content(self, content):
         """Render user message content.
 
@@ -247,8 +251,13 @@ class MessageRenderer:
             content: User message content (string, dict, or list)
         """
         for item in self._normalize_content(content):
-            # Skip image blocks in history
-            if isinstance(item, dict) and item.get("type") == "image":
+            # Show attached files as a short note instead of their contents
+            if isinstance(item, dict) and item.get("type") in ("image", "document"):
+                with st.chat_message(Sender.USER):
+                    if item["type"] == "image":
+                        st.image(base64.b64decode(item["source"]["data"]), width=240)
+                    else:
+                        st.caption(f"📎 {item.get('title', 'Attached document')}")
                 continue
 
             # Extract text from dict blocks or use item directly
