@@ -14,6 +14,8 @@ on:
       - computer-use-demo/**
 jobs:
   build-amd64:
+    # Builds push to Anthropic's registry on 16-core runners, so skip them on forks.
+    if: github.repository_owner == 'anthropics'
     uses: ./.github/workflows/reusable_build_step.yaml
     with:
       platform: amd64
@@ -25,6 +27,8 @@ jobs:
       contents: read
       packages: write
   build-arm64:
+    # Builds push to Anthropic's registry on 16-core runners, so skip them on forks.
+    if: github.repository_owner == 'anthropics'
     uses: ./.github/workflows/reusable_build_step.yaml
     with:
       platform: arm64
@@ -36,6 +40,8 @@ jobs:
       contents: read
       packages: write
   merge:
+    # Builds push to Anthropic's registry on 16-core runners, so skip them on forks.
+    if: github.repository_owner == 'anthropics'
     runs-on: ubuntu-latest
     needs:
       - build-arm64

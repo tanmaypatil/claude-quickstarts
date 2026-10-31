@@ -1,0 +1,33 @@
+# Fly.io config for the hosted demo. Deployed by
+# .github/workflows/deploy-browser-use-demo.yml on every push to main.
+# Secrets (set by the workflow from GitHub secrets): ANTHROPIC_API_KEY, DEMO_PASSWORD.
+app = "browser-use-tanmaypatil"
+primary_region = "sin"
+
+[build]
+
+[env]
+  DEMO_HOSTED = "1"
+  STREAMLIT_SERVER_BASE_URL_PATH = "streamlit"
+  STREAMLIT_SERVER_HEADLESS = "true"
+  DEMO_SYSTEM_PROMPT = "The timesheet app is at https://timesheet-tanmaypatil.fly.dev. Log in there with user ID john and password john123 to enter time as John Smith, or asha and asha123 for Asha Rao. Use this app whenever the user asks about timesheets."
+
+[http_service]
+  # nginx: one password-protected port in front of Streamlit and noVNC
+  internal_port = 8000
+  force_https = true
+  # Sleep when nobody is connected so the 2 GB machine only costs while in use.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "60s"
+    interval = "30s"
+    timeout = "5s"
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2gb"
