@@ -56,10 +56,10 @@ async def test_one_row_per_week_on_a_single_sheet():
     assert [c.value for c in ws[5]] == ["Total", None, 20, 16, 23.5, 24, 22, 105.5]
 
 
-def test_tool_description_asks_for_one_row_per_week():
+def test_tool_description_follows_the_users_layout():
     description = ExcelExportTool().to_params()["description"]
-    assert "one row per employee per week" in description
-    assert "Don't make a separate sheet per week" in description
+    assert "follow whatever layout the user describes" in description
+    assert "default to one sheet with one row per employee per week" in description
 
 
 @pytest.mark.asyncio

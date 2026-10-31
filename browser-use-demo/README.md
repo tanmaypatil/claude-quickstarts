@@ -86,7 +86,7 @@ Once the demo is running, try these prompts in the Streamlit interface:
 - "Navigate to github.com and search for 'playwright'"
 - "Export John Smith's and Asha Rao's timesheets for this month to Excel"
 
-**Excel export (on request):** the agent has an `export_excel` tool next to the browser, used only when you ask for an export. It collects the data by browsing, writes an .xlsx (one sheet, one row per employee per week, with a total row), and a download link appears in the chat right under that step.
+**Excel export (on request):** the agent has an `export_excel` tool next to the browser, used only when you ask for an export. It collects the data by browsing, writes an .xlsx in whatever layout you describe (by default one row per employee per week, with a total row), and a download link appears in the chat right under that step.
 
 Note that the current Playwright implementation hits CAPTCHAs when searching Google.com. To avoid this, we recommend that you specify the website in the prompt (ie. navigate to Anthropic.com and search for x).
 
