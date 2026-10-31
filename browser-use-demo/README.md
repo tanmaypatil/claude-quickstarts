@@ -84,6 +84,9 @@ Once the demo is running, try these prompts in the Streamlit interface:
 - "Go to google.com and search for 'Anthropic Claude'"
 - "Visit wikipedia.org and find information about artificial intelligence"
 - "Navigate to github.com and search for 'playwright'"
+- "Export John Smith's and Asha Rao's timesheets for this month to Excel, one sheet per week"
+
+**Excel export:** the agent has an `export_excel` tool next to the browser. It collects data by browsing, then writes it to an .xlsx (one sheet per week, with totals), and the chat shows a download button for the file.
 
 Note that the current Playwright implementation hits CAPTCHAs when searching Google.com. To avoid this, we recommend that you specify the website in the prompt (ie. navigate to Anthropic.com and search for x).
 
@@ -113,6 +116,7 @@ This demo shows how to build browser automation with Claude using Playwright. Al
 ### Key Files
 
 - **[browser.py](browser_use_demo/tools/browser.py)** - Main tool with all browser actions
+- **[excel.py](browser_use_demo/tools/excel.py)** - `export_excel` tool that builds .xlsx files for download
 - **[loop.py](browser_use_demo/loop.py)** - Sampling loop for API calls and response handling
 - **[streamlit.py](browser_use_demo/streamlit.py)** - Chat UI
 - **[browser_tool_utils/](browser_use_demo/browser_tool_utils/)** - JavaScript utilities for DOM extraction, element finding, and form manipulation

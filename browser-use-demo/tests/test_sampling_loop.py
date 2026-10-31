@@ -536,7 +536,7 @@ class TestSamplingLoopIntegration:
             assert call_args["system"][0]["cache_control"] == {"type": "ephemeral"}
             # Automatic caching also caches the conversation history
             assert call_args["cache_control"] == {"type": "ephemeral"}
-            assert [tool["name"] for tool in call_args["tools"]] == ["browser"]
+            assert [tool["name"] for tool in call_args["tools"]] == ["browser", "export_excel"]
             # anthropic>=1.0 removed these sampling parameters from messages.create()
             assert not {"temperature", "top_p", "top_k"} & call_args.keys()
 

@@ -23,7 +23,7 @@ from anthropic.types.beta import (
 )
 
 from .message_handler import MessageBuilder, ResponseProcessor
-from .tools import BrowserTool, ToolCollection, ToolResult
+from .tools import BrowserTool, ExcelExportTool, ToolCollection, ToolResult
 
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
@@ -60,6 +60,7 @@ If DOM-based actions (refs) aren't working, fall back to screenshot + coordinate
 * Use key for shortcuts (e.g., "ctrl+a")
 * Close popups when they appear
 * Verify actions succeeded before moving on
+* When the user asks for an Excel, xlsx or spreadsheet export, collect the data and call export_excel. The user gets a download button, so never say you can't produce xlsx files
 </TIPS>"""
 
 
@@ -78,19 +79,24 @@ async def sampling_loop(
     only_n_most_recent_images: int | None = None,
     max_tokens: int = 4096,
     browser_tool: Optional[BrowserTool] = None,
+    excel_tool: Optional[ExcelExportTool] = None,
 ):
     """
     Sampling loop for browser automation.
 
     Args:
         browser_tool: Optional persistent browser tool instance. If not provided, creates a new one.
+        excel_tool: Optional persistent export tool; the UI reads its `files` to offer downloads.
     """
     # Reuse existing browser tool or create a new one
     if browser_tool is None:
         # Create browser tool with standard dimensions
         browser_tool = BrowserTool()
 
-    tool_collection = ToolCollection(browser_tool)
+    if excel_tool is None:
+        excel_tool = ExcelExportTool()
+
+    tool_collection = ToolCollection(browser_tool, excel_tool)
 
     # Build system prompt
     system = BetaTextBlockParam(

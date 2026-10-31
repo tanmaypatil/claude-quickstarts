@@ -73,7 +73,7 @@ BROWSER_COMPATIBLE_MODELS = [
 def setup_state():
     """Initialize session state variables."""
     # Import here to avoid circular imports when browser_tool lambda is evaluated
-    from browser_use_demo.tools import BrowserTool
+    from browser_use_demo.tools import BrowserTool, ExcelExportTool
 
     # Define all defaults in one place - use lambdas for lazy evaluation of complex values
     defaults = {
@@ -97,6 +97,8 @@ def setup_state():
         "uploader_key": 0,  # Bumped after each send so the file uploader clears
         # Complex initialization - browser tool (inline lambda)
         "browser_tool": lambda: BrowserTool(),
+        # Holds the spreadsheets the agent creates, shown as download buttons
+        "excel_tool": lambda: ExcelExportTool(),
     }
 
     # Apply all defaults - evaluate lambdas when needed
@@ -428,6 +430,24 @@ def _format_message_content(content, include_images: bool = False):
         return str(content)
 
 
+def render_generated_files():
+    """Show a download button for each file the agent created, newest first."""
+    files = st.session_state.excel_tool.files
+    if not files:
+        return
+    st.markdown("**📊 Files from Claude**")
+    for f in reversed(files):
+        st.download_button(
+            label=f"⬇️ Download {f.name} ({len(f.data) / 1024:.1f} KB)",
+            data=f.data,
+            file_name=f.name,
+            mime=f.mime,
+            key=f"download_{f.name}_{f.created_at.timestamp()}",
+            type="primary",
+            use_container_width=True,
+        )
+
+
 def authenticate():
     """Handle API key authentication."""
     if st.session_state.provider == APIProvider.ANTHROPIC:
@@ -512,6 +532,7 @@ async def run_agent(user_input: str, files: list[tuple[str, bytes]] | None = Non
             api_key=st.session_state.api_key,
             max_tokens=st.session_state.max_tokens,
             browser_tool=st.session_state.browser_tool,  # Pass persistent browser instance
+            excel_tool=st.session_state.excel_tool,
             only_n_most_recent_images=3,  # Keep only 3 most recent screenshots for context
         )
 
@@ -688,6 +709,7 @@ def main():
         if st.button("🗑️ Clear Conversation", type="secondary", use_container_width=True):
             st.session_state.messages = []
             st.session_state.tools = {}
+            st.session_state.excel_tool.files = []
             st.session_state.rendered_message_count = 0
             st.session_state.active_messages = []
             st.session_state.chat_disabled = False
@@ -725,6 +747,7 @@ def main():
     renderer = MessageRenderer(st.session_state)
     with history_container:
         renderer.render_conversation_history(st.session_state.messages)
+        render_generated_files()
 
     # Create container for active/streaming responses
     active_container = st.container()
