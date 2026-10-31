@@ -35,6 +35,11 @@ PROVIDER_TO_DEFAULT_MODEL_NAME: dict[APIProvider, str] = {
 CONFIG_DIR = PosixPath("~/.anthropic").expanduser()
 API_KEY_FILE = CONFIG_DIR / "api_key"
 
+# Hosted mode (Fly.io): the API key comes from a server secret and is never sent
+# to the page, and DEMO_SYSTEM_PROMPT seeds the "Additional System Prompt" box.
+HOSTED = os.environ.get("DEMO_HOSTED") == "1"
+DEFAULT_SYSTEM_PROMPT = os.environ.get("DEMO_SYSTEM_PROMPT", "")
+
 STREAMLIT_STYLE = """
 <style>
     /* Hide the streamlit deploy button */
@@ -74,7 +79,7 @@ def setup_state():
     defaults = {
         # UI State
         "messages": [],
-        "system_prompt": "",
+        "system_prompt": DEFAULT_SYSTEM_PROMPT,
         "hide_screenshots": False,
         "rendered_message_count": 0,  # Track rendered messages to avoid re-rendering
         "last_error": None,  # Store last error message to display persistently
@@ -568,14 +573,17 @@ def main():
         # Model selection (only browser-compatible models)
         st.selectbox("Model", options=BROWSER_COMPATIBLE_MODELS, index=0, key="model")
 
-        # API Key
-        st.text_input(
-            "Anthropic API Key",
-            type="password",
-            value=st.session_state.api_key,
-            key="api_key",
-            help="Get your API key from https://console.anthropic.com",
-        )
+        # API Key. When hosted, keep it off the page: a password field still sends its value to the browser.
+        if HOSTED:
+            st.caption("The Anthropic API key is set on the server.")
+        else:
+            st.text_input(
+                "Anthropic API Key",
+                type="password",
+                value=st.session_state.api_key,
+                key="api_key",
+                help="Get your API key from https://console.anthropic.com",
+            )
 
         # Max tokens
         st.number_input(

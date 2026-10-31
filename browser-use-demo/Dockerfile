@@ -16,6 +16,9 @@ RUN apt-get update && \
     sudo \
     mutter \
     x11vnc \
+    # Password-protected reverse proxy for the hosted (Fly.io) demo
+    nginx \
+    openssl \
     # Python/pyenv reqs
     build-essential \
     libssl-dev  \
@@ -70,6 +73,7 @@ ENV USERNAME=browseruse
 ENV HOME=/home/$USERNAME
 RUN useradd -m -s /bin/bash -d $HOME $USERNAME
 RUN echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN chown -R $USERNAME:$USERNAME /var/log/nginx /var/lib/nginx
 USER browseruse
 WORKDIR $HOME
 

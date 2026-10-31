@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Browser Use Demo</title>
+        <style>
+            html, body { margin: 0; padding: 0; height: 100%; background: #111; }
+            .container { display: flex; height: 100vh; height: 100dvh; width: 100vw; }
+            iframe { border: none; display: block; }
+            .chat { flex: 1; min-width: 0; background: #fff; }
+            .screen { flex: 2; min-width: 0; }
+            #toggleViewOnly { position: absolute; top: 10px; right: 10px; z-index: 1000; }
+            /* Phones: browser view on top at 16:9, chat underneath. */
+            @media (max-width: 900px) {
+                .container { flex-direction: column; }
+                .screen { flex: none; width: 100%; aspect-ratio: 16 / 9; order: -1; }
+                .chat { flex: 1; width: 100%; }
+                #toggleViewOnly { display: none; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <iframe src="/streamlit/" class="chat" title="Chat" allow="fullscreen"></iframe>
+            <iframe
+                id="vnc"
+                src="/vnc/vnc.html?path=vnc/websockify&resize=scale&autoconnect=1&view_only=1&reconnect=1&reconnect_delay=2000"
+                class="screen"
+                title="Browser"
+                allow="fullscreen"
+            ></iframe>
+        </div>
+        <button id="toggleViewOnly">Toggle Screen Control (Off)</button>
+        <script>
+            document.getElementById("toggleViewOnly").addEventListener("click", function () {
+                var vnc = document.getElementById("vnc");
+                var on = vnc.src.includes("view_only=1");
+                vnc.src = vnc.src.replace(on ? "view_only=1" : "view_only=0", on ? "view_only=0" : "view_only=1");
+                this.innerText = "Toggle Screen Control (" + (on ? "On" : "Off") + ")";
+            });
+        </script>
+    </body>
+</html>
