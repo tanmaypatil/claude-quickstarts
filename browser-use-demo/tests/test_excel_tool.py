@@ -31,8 +31,39 @@ def _open(data: bytes):
     return load_workbook(io.BytesIO(data))
 
 
+WEEKLY_ROWS = {
+    "name": "Timesheets",
+    "columns": ["Week starting", "Employee", "Mon", "Tue", "Wed", "Thu", "Fri", "Total"],
+    "rows": [
+        ["2026-10-19", "John Smith", 8, 8, 7.5, 8, 6, 37.5],
+        ["2026-10-19", "Asha Rao", 4, 0, 8, 8, 8, 28],
+        ["2026-10-26", "John Smith", 8, 8, 8, 8, 8, 40],
+    ],
+    "add_totals": True,
+}
+
+
 @pytest.mark.asyncio
-async def test_one_sheet_per_week_with_totals():
+async def test_one_row_per_week_on_a_single_sheet():
+    result = await ExcelExportTool()(filename="timesheets", sheets=[WEEKLY_ROWS])
+    wb = _open(result.file.data)
+    assert wb.sheetnames == ["Timesheets"]
+    ws = wb["Timesheets"]
+    assert [c.value for c in ws[1]] == WEEKLY_ROWS["columns"]
+    assert [c.value for c in ws[2]] == WEEKLY_ROWS["rows"][0]
+    # header + 3 week rows + total row; text columns are left out of the total
+    assert ws.max_row == 5
+    assert [c.value for c in ws[5]] == ["Total", None, 20, 16, 23.5, 24, 22, 105.5]
+
+
+def test_tool_description_asks_for_one_row_per_week():
+    description = ExcelExportTool().to_params()["description"]
+    assert "one row per employee per week" in description
+    assert "Don't make a separate sheet per week" in description
+
+
+@pytest.mark.asyncio
+async def test_multiple_sheets_with_totals():
     tool = ExcelExportTool()
     result = await tool(filename="timesheets oct", sheets=WEEKS)
 

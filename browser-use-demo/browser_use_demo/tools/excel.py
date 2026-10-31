@@ -29,7 +29,7 @@ EXCEL_TOOL_DESCRIPTION = """Create an Excel (.xlsx) file the user can download.
 
 Only use this when the user explicitly asks to export, download or save data as Excel, xlsx or a spreadsheet. Otherwise show data in your chat reply as usual. When asked, first collect the data (for example by browsing to the pages that show it), then call this tool once with all of it. The user gets a download link in the chat; you don't need to give them a path.
 
-For data that spans several weeks, put each week on its own sheet (for example "Week of 2026-10-26") with the same columns on every sheet, and set add_totals so each sheet ends with a total row. Pass numbers as numbers, not strings, so Excel can sum them."""
+For timesheet data, unless the user asks for a different layout, use ONE sheet with one row per employee per week, ordered by week then employee, with these columns: "Week starting" (the Monday, YYYY-MM-DD), "Employee", "Mon", "Tue", "Wed", "Thu", "Fri", "Total". Don't make a separate sheet per week. Set add_totals to end the sheet with a total row. Pass numbers as numbers, not strings, so Excel can sum them."""
 
 EXCEL_TOOL_INPUT_SCHEMA = {
     "type": "object",
