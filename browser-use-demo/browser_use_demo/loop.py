@@ -23,7 +23,7 @@ from anthropic.types.beta import (
 )
 
 from .message_handler import MessageBuilder, ResponseProcessor
-from .tools import BrowserTool, ToolCollection, ToolResult
+from .tools import BrowserTool, ExcelExportTool, ToolCollection, ToolResult
 
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
@@ -60,6 +60,7 @@ If DOM-based actions (refs) aren't working, fall back to screenshot + coordinate
 * Use key for shortcuts (e.g., "ctrl+a")
 * Close popups when they appear
 * Verify actions succeeded before moving on
+* Only when the user explicitly asks to export data to Excel, xlsx or a spreadsheet, collect the data and call export_excel; it puts a download link in the chat, so don't say you can't produce xlsx files. Don't export unless asked
 </TIPS>"""
 
 
@@ -90,7 +91,7 @@ async def sampling_loop(
         # Create browser tool with standard dimensions
         browser_tool = BrowserTool()
 
-    tool_collection = ToolCollection(browser_tool)
+    tool_collection = ToolCollection(browser_tool, ExcelExportTool())
 
     # Build system prompt
     system = BetaTextBlockParam(

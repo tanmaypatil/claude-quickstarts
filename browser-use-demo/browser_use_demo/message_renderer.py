@@ -165,6 +165,17 @@ class MessageRenderer:
             st.error(tool_result.error)
         if tool_result.base64_image and not self.session_state.hide_screenshots:
             st.image(base64.b64decode(tool_result.base64_image))
+        # A file the agent exported on request: offer it right here in the chat
+        file = getattr(tool_result, "file", None)
+        if file:
+            st.download_button(
+                label=f"⬇️ Download {file.name} ({len(file.data) / 1024:.1f} KB)",
+                data=file.data,
+                file_name=file.name,
+                mime=file.mime,
+                key=f"download_{file.name}_{file.created_at.timestamp()}",
+                type="primary",
+            )
 
     def _render_dict_message(self, message: dict):
         """Render dictionary-based messages based on their type field.
