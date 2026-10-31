@@ -5,7 +5,10 @@ import io
 import pytest
 from openpyxl import load_workbook
 
-from browser_use_demo.tools import ExcelExportTool, ToolCollection
+from unittest.mock import MagicMock, patch
+
+from browser_use_demo.message_renderer import MessageRenderer
+from browser_use_demo.tools import ExcelExportTool, ToolCollection, ToolResult
 from browser_use_demo.tools.base import ToolError
 from browser_use_demo.tools.excel import build_workbook
 
@@ -35,7 +38,7 @@ async def test_one_sheet_per_week_with_totals():
 
     assert not result.error
     assert "timesheets oct.xlsx" in result.output
-    [f] = tool.files
+    f = result.file
     assert f.name == "timesheets oct.xlsx"
 
     wb = _open(f.data)
@@ -50,12 +53,16 @@ async def test_one_sheet_per_week_with_totals():
 
 
 @pytest.mark.asyncio
-async def test_same_name_replaces_previous_file():
-    tool = ExcelExportTool()
-    await tool(filename="a.xlsx", sheets=WEEKS[:1])
-    await tool(filename="a.xlsx", sheets=WEEKS)
-    assert len(tool.files) == 1
-    assert len(_open(tool.files[0].data).sheetnames) == 2
+async def test_download_button_shows_only_for_export_results():
+    result = await ExcelExportTool()(filename="a.xlsx", sheets=WEEKS[:1])
+    renderer = MessageRenderer(MagicMock(hide_screenshots=False))
+    with patch("browser_use_demo.message_renderer.st") as st:
+        renderer._render_tool_result(result)
+        renderer._render_tool_result(ToolResult(output="Clicked the button"))
+    st.download_button.assert_called_once()
+    kwargs = st.download_button.call_args.kwargs
+    assert kwargs["file_name"] == "a.xlsx"
+    assert kwargs["data"] == result.file.data
 
 
 def test_sheet_names_are_cleaned_and_deduplicated():

@@ -1,7 +1,7 @@
 from .base import BaseAnthropicTool, ToolError, ToolResult
 from .browser import BrowserTool
 from .collection import ToolCollection
-from .excel import ExcelExportTool, GeneratedFile
+from .excel import ExcelExportTool, FileToolResult, GeneratedFile
 
 __all__ = [
     "BaseAnthropicTool",
@@ -11,4 +11,5 @@ __all__ = [
     "ToolCollection",
     "ExcelExportTool",
     "GeneratedFile",
+    "FileToolResult",
 ]

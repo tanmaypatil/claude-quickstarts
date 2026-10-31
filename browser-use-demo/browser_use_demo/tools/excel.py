@@ -1,14 +1,15 @@
 """
 Excel export tool: lets the agent hand the user a spreadsheet.
 
-The agent gathers data by browsing, then calls this tool with the rows. The
-workbook is built in memory and kept on the tool instance, and the Streamlit
-UI shows a download button for every file in `files`.
+The agent calls this only when the user asks for an export. It gathers the
+data by browsing, then passes the rows here. The workbook is built in memory
+and returned on the tool result, and the chat shows a download button right
+under that result.
 """
 
 import io
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal, cast
 
@@ -26,7 +27,7 @@ INVALID_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._ -]")
 
 EXCEL_TOOL_DESCRIPTION = """Create an Excel (.xlsx) file the user can download.
 
-Use this whenever the user asks to export, download or save data as Excel, xlsx or a spreadsheet. First collect the data (for example by browsing to the pages that show it), then call this tool once with all of it. The user sees a download button in the chat; you don't need to give them a path.
+Only use this when the user explicitly asks to export, download or save data as Excel, xlsx or a spreadsheet. Otherwise show data in your chat reply as usual. When asked, first collect the data (for example by browsing to the pages that show it), then call this tool once with all of it. The user gets a download link in the chat; you don't need to give them a path.
 
 For data that spans several weeks, put each week on its own sheet (for example "Week of 2026-10-26") with the same columns on every sheet, and set add_totals so each sheet ends with a total row. Pass numbers as numbers, not strings, so Excel can sum them."""
 
@@ -82,6 +83,13 @@ class GeneratedFile:
     data: bytes
     mime: str
     created_at: datetime
+
+
+@dataclass(kw_only=True, frozen=True)
+class FileToolResult(ToolResult):
+    """A tool result that carries a file for the chat to offer as a download."""
+
+    file: GeneratedFile | None = field(default=None, compare=False)
 
 
 def _clean_filename(filename: str) -> str:
@@ -164,13 +172,9 @@ def build_workbook(sheets: list[dict[str, Any]]) -> tuple[bytes, list[str]]:
 
 
 class ExcelExportTool(BaseAnthropicTool):
-    """Writes rows to an .xlsx workbook and keeps it for the UI to offer as a download."""
+    """Writes rows to an .xlsx workbook and returns it for the chat to offer as a download."""
 
     name: Literal["export_excel"] = "export_excel"
-
-    def __init__(self):
-        super().__init__()
-        self.files: list[GeneratedFile] = []
 
     def to_params(self) -> BetaToolUnionParam:
         return cast(
@@ -182,13 +186,12 @@ class ExcelExportTool(BaseAnthropicTool):
             },
         )
 
-    async def __call__(self, *, filename: str = "export.xlsx", sheets: list[dict] | None = None, **kwargs) -> ToolResult:
+    async def __call__(self, *, filename: str = "export.xlsx", sheets: list[dict] | None = None, **kwargs) -> FileToolResult:
         data, summary = build_workbook(sheets or [])
         name = _clean_filename(filename)
-        # A re-export with the same name replaces the earlier file
-        self.files = [f for f in self.files if f.name != name]
-        self.files.append(GeneratedFile(name=name, data=data, mime=XLSX_MIME, created_at=datetime.now()))
-        return ToolResult(
+        file = GeneratedFile(name=name, data=data, mime=XLSX_MIME, created_at=datetime.now())
+        return FileToolResult(
             output=f"Created {name} ({len(data) / 1024:.1f} KB). The user now has a download "
-            f"button for it.\n" + "\n".join(summary)
+            f"link for it in the chat.\n" + "\n".join(summary),
+            file=file,
         )
