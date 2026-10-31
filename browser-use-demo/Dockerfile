@@ -114,5 +114,8 @@ COPY --chown=$USERNAME:$USERNAME validate_env.py $HOME/validate_env.py
 ENV DISPLAY_NUM=1
 ENV HEIGHT=1080
 ENV WIDTH=1920
+# Let every process find the virtual screen. Docker runs get --display from
+# browser.py (it checks /.dockerenv), but Fly.io machines have no /.dockerenv.
+ENV DISPLAY=:1
 
 ENTRYPOINT [ "./entrypoint.sh" ]
