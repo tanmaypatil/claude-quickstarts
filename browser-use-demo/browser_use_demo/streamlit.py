@@ -453,8 +453,27 @@ def get_or_create_event_loop():
     return st.session_state.event_loop
 
 
+def resumable_messages(messages: list) -> list:
+    """Drop a trailing assistant turn whose tool calls never got results.
+
+    The API rejects a tool_use without a matching tool_result, so a run cut off
+    mid-tool must not leave one at the end of the history.
+    """
+    messages = list(messages)
+    while messages and messages[-1].get("role") == "assistant":
+        content = messages[-1].get("content")
+        if isinstance(content, list) and any(
+            isinstance(b, dict) and b.get("type") == "tool_use" for b in content
+        ):
+            messages.pop()
+        else:
+            break
+    return messages
+
+
 async def run_agent(user_input: str, files: list[tuple[str, bytes]] | None = None):
     """Run the browser automation agent with user input and optional attached files."""
+    api_messages = None
     try:
         # Ensure chat is disabled while processing
         st.session_state.chat_disabled = True
@@ -541,6 +560,14 @@ async def run_agent(user_input: str, files: list[tuple[str, bytes]] | None = Non
             st.code(error_traceback)
         st.session_state.chat_disabled = False
         st.rerun()
+    finally:
+        # Any widget click during a run (sidebar, download, ...) makes Streamlit
+        # rerun the script, which aborts this coroutine with a BaseException that
+        # skips the handlers above. Never leave the chat locked on "processing"
+        # or lose the steps that already ran.
+        st.session_state.chat_disabled = False
+        if api_messages is not None:
+            st.session_state.messages = resumable_messages(api_messages)
 
 
 def main():

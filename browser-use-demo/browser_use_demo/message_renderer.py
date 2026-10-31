@@ -175,6 +175,8 @@ class MessageRenderer:
                 mime=file.mime,
                 key=f"download_{file.name}_{file.created_at.timestamp()}",
                 type="primary",
+                # Downloading must not rerun the app: a rerun mid-run aborts the agent
+                on_click="ignore",
             )
 
     def _render_dict_message(self, message: dict):
