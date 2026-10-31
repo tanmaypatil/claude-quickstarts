@@ -2,7 +2,7 @@
 # .github/workflows/deploy-browser-use-demo.yml on every push to main.
 # Secrets (set by the workflow from GitHub secrets): ANTHROPIC_API_KEY, DEMO_PASSWORD.
 app = "browser-use-tanmaypatil"
-primary_region = "bom"
+primary_region = "sin"
 
 [build]
 
