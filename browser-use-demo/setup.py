@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.11",
     install_requires=[
-        "streamlit==1.41.0",
+        "streamlit==1.43.2",
         "anthropic[bedrock,vertex]>=2.0.0,<3",
         "jsonschema==4.22.0",
         "boto3>=1.28.57",
