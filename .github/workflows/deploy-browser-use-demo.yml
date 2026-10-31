@@ -1,44 +1,14 @@
 name: Deploy browser-use demo to Fly.io
 on:
-  push:
-    branches: [main]
-    paths:
-      - browser-use-demo/**
-      - .github/workflows/deploy-browser-use-demo.yml
   workflow_dispatch:
-
-concurrency: fly-deploy-browser-use-demo
-
 jobs:
-  deploy:
+  diag:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: browser-use-demo
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Create the app on first deploy
-        run: |
-          APP=$(grep '^app' fly.toml | cut -d'"' -f2)
-          flyctl status --app "$APP" >/dev/null 2>&1 || flyctl apps create "$APP"
-      - name: Sync secrets from GitHub
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
-        run: |
-          test -n "$ANTHROPIC_API_KEY" && test -n "$DEMO_PASSWORD" || { echo "Set ANTHROPIC_API_KEY and DEMO_PASSWORD repository secrets"; exit 1; }
-          printf 'ANTHROPIC_API_KEY=%s\nDEMO_PASSWORD=%s\n' "$ANTHROPIC_API_KEY" "$DEMO_PASSWORD" | flyctl secrets import --stage
-      - run: flyctl deploy --remote-only --ha=false
-      - name: Smoke-check the virtual display and services
-        continue-on-error: true
-        run: |
-          sleep 20
-          flyctl ssh console -C "bash -lc 'pgrep -a Xvfb; DISPLAY=:1 xdotool getdisplaygeometry; curl -s -o /dev/null -w \"streamlit %{http_code}\n\" localhost:8501/streamlit/_stcore/health; curl -s -o /dev/null -w \"novnc %{http_code}\n\" localhost:6080/vnc.html'"
-      - name: Show app logs if the deploy failed
-        if: failure()
-        run: |
-          flyctl status || true
-          flyctl logs --no-tail | tail -n 150 || true
+      - run: flyctl status --app browser-use-tanmaypatil || true
+      - run: flyctl logs --app browser-use-tanmaypatil --no-tail | tail -n 200 || true
+      - run: |
+          flyctl ssh console --app browser-use-tanmaypatil -C "bash -lc 'uptime; free -m; ps -eo pid,etime,rss,args --sort=-rss | head -25; echo ---x11vnc; pgrep -a x11vnc; tail -30 /tmp/x11vnc_stderr.log; echo ---novnc; tail -40 /tmp/novnc.log; echo ---streamlit; tail -30 /tmp/streamlit_stdout.log; echo ---dmesg; sudo dmesg 2>/dev/null | grep -i -E \"oom|killed\" | tail; ss -tnp 2>/dev/null | head -30'" || true
