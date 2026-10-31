@@ -107,6 +107,8 @@ RUN python -m playwright install chromium && \
 # Setup desktop environment & app
 COPY --chown=$USERNAME:$USERNAME image/ $HOME
 COPY --chown=$USERNAME:$USERNAME browser_use_demo/ $HOME/browser_use_demo/
+# entrypoint.sh runs this; docker-compose mounts over it, but a plain image (Fly.io) needs its own copy
+COPY --chown=$USERNAME:$USERNAME validate_env.py $HOME/validate_env.py
 
 # Display configuration - hardcoded values
 ENV DISPLAY_NUM=1

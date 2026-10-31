@@ -32,3 +32,8 @@ jobs:
           test -n "$ANTHROPIC_API_KEY" && test -n "$DEMO_PASSWORD" || { echo "Set ANTHROPIC_API_KEY and DEMO_PASSWORD repository secrets"; exit 1; }
           printf 'ANTHROPIC_API_KEY=%s\nDEMO_PASSWORD=%s\n' "$ANTHROPIC_API_KEY" "$DEMO_PASSWORD" | flyctl secrets import --stage
       - run: flyctl deploy --remote-only --ha=false
+      - name: Show app logs if the deploy failed
+        if: failure()
+        run: |
+          flyctl status || true
+          flyctl logs --no-tail | tail -n 150 || true
