@@ -72,7 +72,7 @@ A public copy runs at https://browser-use-tanmaypatil.fly.dev. It asks for a log
 - **Deploys:** every push to `main` that touches `browser-use-demo/` runs `.github/workflows/deploy-browser-use-demo.yml`. It needs three repository secrets: `FLY_API_TOKEN`, `ANTHROPIC_API_KEY` and `DEMO_PASSWORD`. You can also run it by hand from the Actions tab.
 - **How it works:** with `DEMO_HOSTED=1` (set in `fly.toml`), `entrypoint.sh` starts nginx on port 8000 (`image/nginx.conf`). nginx asks for the password and serves `image/static_content/hosted.html`, Streamlit at `/streamlit/` and noVNC at `/vnc/`, all on one port. The container won't start in hosted mode without `DEMO_PASSWORD`, because the demo spends your API key. The API key field is hidden, so the key never reaches the browser.
 - **Target app:** `DEMO_SYSTEM_PROMPT` in `fly.toml` tells the agent where the timesheet app is and which logins to use. It fills the "Additional System Prompt" box, where viewers can edit it.
-- **Cost:** a 2 GB machine that stops when nobody is connected, so you pay only while it's in use. The first visit after a stop takes about 30 seconds to wake up. Close the tab when you're done so the machine can stop.
+- **Cost:** a 2 GB machine that stops when nobody is connected, so you pay only while it's in use. The first visit after a stop takes about 30 seconds to wake up. After 15 minutes with no typing, tapping or chat output, the page pauses itself and closes its connections so the machine can stop even if a tab is left open; "Resume demo" brings it back. Add `?idle_minutes=N` to the URL to change the timeout.
 
 Running locally with `docker compose` works exactly as before.
 

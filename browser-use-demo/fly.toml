@@ -21,6 +21,13 @@ primary_region = "sin"
   auto_start_machines = true
   min_machines_running = 0
 
+  # Count in-flight requests (open websockets included), not idle keep-alive connections,
+  # so the machine can stop once the page's idle pause closes its websockets.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 25
+
   [[http_service.checks]]
     grace_period = "60s"
     interval = "30s"

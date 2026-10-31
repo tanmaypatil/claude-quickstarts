@@ -11,6 +11,14 @@
             .chat { flex: 1; min-width: 0; background: #fff; }
             .screen { flex: 2; min-width: 0; }
             #toggleViewOnly { position: absolute; top: 10px; right: 10px; z-index: 1000; }
+            #paused {
+                display: none; position: fixed; inset: 0; z-index: 2000;
+                background: rgba(17, 17, 17, 0.92); color: #fff;
+                font: 16px/1.5 system-ui, sans-serif; text-align: center;
+                align-items: center; justify-content: center; padding: 16px;
+            }
+            #paused.show { display: flex; }
+            #paused button { font: inherit; padding: 10px 20px; margin-top: 12px; cursor: pointer; }
             /* Phones: browser view on top at 16:9, chat underneath. */
             @media (max-width: 900px) {
                 .container { flex-direction: column; }
@@ -22,7 +30,7 @@
     </head>
     <body>
         <div class="container">
-            <iframe src="/streamlit/" class="chat" title="Chat" allow="fullscreen"></iframe>
+            <iframe id="chat" src="/streamlit/" class="chat" title="Chat" allow="fullscreen"></iframe>
             <iframe
                 id="vnc"
                 src="/vnc/vnc.html?path=vnc/websockify&resize=scale&autoconnect=1&view_only=1&reconnect=1&reconnect_delay=2000"
@@ -30,6 +38,13 @@
                 title="Browser"
                 allow="fullscreen"
             ></iframe>
+        </div>
+        <div id="paused" role="dialog" aria-live="polite">
+            <div>
+                <div>Demo paused after 15 minutes without activity, so the server can sleep.</div>
+                <button id="resume">Resume demo</button>
+                <div style="opacity: 0.7; font-size: 14px; margin-top: 8px">If it was asleep, it takes about 30 seconds to wake up.</div>
+            </div>
         </div>
         <button id="toggleViewOnly">Toggle Screen Control (Off)</button>
         <script>
@@ -39,6 +54,60 @@
                 vnc.src = vnc.src.replace(on ? "view_only=1" : "view_only=0", on ? "view_only=0" : "view_only=1");
                 this.innerText = "Toggle Screen Control (" + (on ? "On" : "Off") + ")";
             });
+        </script>
+        <script>
+            // Idle pause: an open tab keeps websockets to Streamlit and noVNC alive, which keeps the
+            // Fly machine (and its bill) running. After IDLE_MINUTES with no typing, tapping or chat
+            // output, blank both iframes to close those connections so Fly can stop the machine.
+            // ?idle_minutes=N overrides the default (used for testing).
+            (function () {
+                var param = new URLSearchParams(location.search).get("idle_minutes");
+                var idleMs = (param ? parseFloat(param) : 15) * 60 * 1000;
+                var chat = document.getElementById("chat");
+                var vnc = document.getElementById("vnc");
+                var overlay = document.getElementById("paused");
+                var srcs = { chat: chat.src, vnc: vnc.src };
+                var last = Date.now();
+                var paused = false;
+                var events = ["keydown", "pointerdown", "touchstart", "wheel", "input"];
+
+                function touch() { last = Date.now(); }
+                events.forEach(function (e) { window.addEventListener(e, touch, true); });
+
+                // Same-origin iframes: watch typing/taps inside them, and chat output from the agent.
+                function watch(frame, observe) {
+                    frame.addEventListener("load", function () {
+                        var doc;
+                        try { doc = frame.contentDocument; } catch (err) { return; }
+                        if (!doc || paused) return;
+                        events.forEach(function (e) { doc.addEventListener(e, touch, true); });
+                        if (observe && window.MutationObserver) {
+                            new MutationObserver(touch).observe(doc.documentElement,
+                                { childList: true, subtree: true, characterData: true });
+                        }
+                        touch();
+                    });
+                }
+                watch(chat, true);
+                watch(vnc, false);
+
+                function pause() {
+                    paused = true;
+                    chat.src = "about:blank";
+                    vnc.src = "about:blank";
+                    overlay.classList.add("show");
+                }
+                document.getElementById("resume").addEventListener("click", function () {
+                    paused = false;
+                    overlay.classList.remove("show");
+                    chat.src = srcs.chat;
+                    vnc.src = srcs.vnc;
+                    touch();
+                });
+                setInterval(function () {
+                    if (!paused && Date.now() - last > idleMs) pause();
+                }, Math.min(30000, idleMs / 4));
+            })();
         </script>
     </body>
 </html>
