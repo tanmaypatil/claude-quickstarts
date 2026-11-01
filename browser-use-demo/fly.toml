@@ -21,10 +21,11 @@ primary_region = "sin"
   auto_start_machines = true
   min_machines_running = 0
 
-  # Count in-flight requests (open websockets included), not idle keep-alive connections,
-  # so the machine can stop once the page's idle pause closes its websockets.
+  # Count open connections, so the chat and screen websockets keep the machine awake
+  # while someone is using the demo. ("requests" let Fly stop it mid-session.)
+  # The page's 15-minute idle pause closes those websockets so it can still sleep.
   [http_service.concurrency]
-    type = "requests"
+    type = "connections"
     soft_limit = 20
     hard_limit = 25
 
